@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -30,6 +31,8 @@ func main() {
 	watch(cfg.Dir)
 }
 
+var fileNameRe = regexp.MustCompile(`^Screen Shot .+\.png$`)
+
 func watch(dir string) {
 	oldFiles := map[string]time.Time{}
 	for range time.Tick(time.Millisecond * 100) {
@@ -40,9 +43,13 @@ func watch(dir string) {
 		for _, file := range files {
 			modTime := file.ModTime()
 			name := file.Name()
-			if oldFiles[name].Before(modTime) && modTime.After(time.Now().Add(-time.Second*10)) {
+			if !fileNameRe.MatchString(name) || !oldFiles[name].IsZero() {
+				continue
+			}
+			if modTime.After(time.Now().Add(-time.Second * 3)) {
 				uploadAndClip(filepath.Join(dir, name))
 				oldFiles[name] = modTime
+				break
 			}
 		}
 	}
@@ -61,14 +68,19 @@ func uploadAndClip(path string) {
 }
 
 func upload(path string) (string, error) {
-	args := cfg.UploadCommand[1:]
-	for i, arg := range args {
+	args := []string{}
+	for _, arg := range cfg.UploadCommand {
 		if arg == "{filePath}" {
-			args[i] = path
+			args = append(args, path)
+		} else {
+			args = append(args, arg)
 		}
 	}
-	cmd := exec.Command(cfg.UploadCommand[0], args...)
+	cmd := exec.Command(args[0], args[1:]...)
 	url, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("error uploading file: %v %s", err, url)
+	}
 	return strings.TrimSpace(string(url)), err
 }
 
