@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -52,9 +53,11 @@ func uploadAndClip(path string) {
 	url, err := upload(path)
 	if err != nil {
 		log.Println(err)
+		notify("upload failed\n" + err.Error())
 		return
 	}
 	clip(url)
+	notify("upload complete\n" + url)
 }
 
 func upload(path string) (string, error) {
@@ -75,5 +78,13 @@ func clip(data string) {
 	err := cmd.Run()
 	if err != nil {
 		panic(err)
+	}
+}
+
+func notify(text string) {
+	// TODO: escape text
+	err := exec.Command("osascript", "-e", fmt.Sprintf(`display notification "%s" with title "Screenshot"`, text)).Run()
+	if err != nil {
+		log.Println("error showing notification", err)
 	}
 }
