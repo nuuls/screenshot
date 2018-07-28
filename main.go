@@ -19,8 +19,8 @@ type config struct {
 
 func loadConfig() config {
 	return config{
-		CopyCommand:   []string{"pbcopy"},
-		Dir:           "/Users/nuuls/Desktop/screenshots",
+		CopyCommand:   []string{"xclip", "-sel", "clip"},
+		Dir:           "/home/nuuls/Pictures",
 		UploadCommand: []string{"ni", "{filePath}"},
 	}
 }
@@ -31,11 +31,11 @@ func main() {
 	watch(cfg.Dir)
 }
 
-var fileNameRe = regexp.MustCompile(`^Screen Shot .+\.png$`)
+var fileNameRe = regexp.MustCompile(`^Screenshot .+\.png$`)
 
 func watch(dir string) {
 	oldFiles := map[string]time.Time{}
-	for range time.Tick(time.Millisecond * 100) {
+	for range time.Tick(time.Millisecond * 300) {
 		files, err := ioutil.ReadDir(dir)
 		if err != nil {
 			panic(err)
@@ -64,7 +64,7 @@ func uploadAndClip(path string) {
 		return
 	}
 	clip(url)
-	notify("upload complete\n" + url)
+	notify(url)
 }
 
 func upload(path string) (string, error) {
@@ -94,8 +94,7 @@ func clip(data string) {
 }
 
 func notify(text string) {
-	// TODO: escape text
-	err := exec.Command("osascript", "-e", fmt.Sprintf(`display notification "%s" with title "Screenshot"`, text)).Run()
+	err := exec.Command("notify-send", "Screenshot uploaded", text).Run()
 	if err != nil {
 		log.Println("error showing notification", err)
 	}
