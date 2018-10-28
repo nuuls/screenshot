@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -55,7 +56,24 @@ func watch(dir string) {
 	}
 }
 
+func fileSize(path string) int64 {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return stat.Size()
+}
+
 func uploadAndClip(path string) {
+	size := fileSize(path)
+	for {
+		time.Sleep(time.Millisecond * 200)
+		newSize := fileSize(path)
+		if size == newSize {
+			break
+		}
+		size = newSize
+	}
 	log.Println("uploading", path)
 	url, err := upload(path)
 	if err != nil {
