@@ -31,7 +31,7 @@ func main() {
 	watch(cfg.Dir)
 }
 
-var fileNameRe = regexp.MustCompile(`^Screen Shot .+\.png$`)
+var fileNameRe = regexp.MustCompile(`.+\.png$`)
 
 func watch(dir string) {
 	oldFiles := map[string]time.Time{}
